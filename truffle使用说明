@@ -1,0 +1,306 @@
+# 1、**创建项目**
+
+## 1-1 创建项目文件夹
+
+```powershell
+mkdir ProjectName   //此处也可使用webstorm等IDE创建空项目，然后后面的命令在IDE的terminal中执行即可。或者直接创建nodejs或者express工程。
+```
+
+## 1-2 然后在该文件夹下路径下，运行如下代码，进行初始化:
+
+```powershell
+truffle init  //创建空白项目，没有用truffle 的box
+```
+
+### 1-3  转换为npm项目，便于管理项目：
+
+```powershell
+npm init -y
+```
+
+## 1-4 项目根目录下安装truffle-contract（可选，根据自己情况，不安装vsc编写合约会报错）**
+
+```powershell
+npm install @truffle/contract@4.5.11 --save      //安装truffle框架提供的contract，对web3进行了封装，方便与合约进行交互
+```
+
+## 1-5 安装web3.js（备选，@truffle/contract和Web3冲突）
+
+```javascript
+npm install web3 --save   //使用@truffle/contract时，Web3对象要用@truffle/contract自己的，不能从web3 import
+```
+
+
+
+# 2、**后端的开发**
+
+## 2-1 在contract目录下新建并编辑自己的智能合约
+
+在webstorm或者visual studio code中可以手工生成 xxx.sol文件，或者像下面一样
+
+备注一条命令：
+
+```powershell
+truffle create contract HelloWorld  //HelloWorld是.sol文件名，不用加.sol，命令会自动生成合约.sol文件，并且这个命令在项目路径下执行，自动在contract下生成。此外，这种方式的好处在于不用自己写
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.22 <0.9.0;
+//并且同时生成项目同名合约,如下：
+contract HelloWorld{
+	constructor() public {}   //注意很多时候系统会提示删掉public 
+}
+```
+
+
+
+## 2-2 编译智能合约
+
+```powershell
+truffle compile -all  //如果是在IDE中实现，更合适的是放到第四步，truffle migrate前面。
+```
+
+编译成功后，会在/build/contracts生成相应的json文件
+
+## 2-3 测试合约（略过）
+
+## 2-4 部署合约
+
+Windows下主要是truffle-config.js的配置，将注释部分这块代码取消注释即可
+
+```javascript
+ module.exports = {
+     networks: {
+         development: {
+             host: "127.0.0.1",
+             port: 8545,
+             network_id: "*" //watch any network id
+         }
+     }
+ };
+```
+
+然后在../migrations文件夹下，新建2_**deploy_contracts**.js（加粗部分名字自己取，或者使用truffle create migration (需要迁移的合约名)，系统会自动创建迁移脚本，但是数字头会是很大的随机数字）,如图所示，用于部署自己编写的System.sol合约，这里我部署这个合约有个输入参数，因此需要在后面添加一个输入参数。
+
+```javascript
+var System=artifacts.require('System') //'System'是自己编写的智能合约名字
+module.exports=function (deployer) {
+    deployer.deploy(System,100)   //100是constructor的参数
+}
+
+//或者如下：
+const BaconMaker = artifacts.require('./BaconMaker.sol')
+module.exports = (deployer, network, accounts) => {
+  const userAddress = accounts[3];
+  deployer.deploy(BaconMaker, userAddress)
+}
+```
+
+开启Ganache（巧克力） ， 开始部署合约：
+
+```powershell
+truffle migrate //在此前打开巧克力
+ 
+ truffle migrate --reset //如果修改了合约重新部署，需要加reset参数
+```
+
+**注意：我们这里用的port是8545， ganache（巧克力） 默认监听的端口是7545，请将 巧克力中点击右上角的设置（齿轮）进行修改，或者更改config的json文件。不然会报错：Could not connect to your Ethereum client with the following parameters**
+
+然后会返回一大片的信息：
+
+Compiling your contracts...
+
+> Compiling .\contracts\Migrations.sol
+> Compiling .\contracts\System.sol
+> Artifacts written to D:\CODE\BLOCKCHAINCODE\Spectum_sharing_DApp\build\contract
+> s
+> Compiled successfully using:
+>
+>    - solc: 0.8.13+commit.abaa5c0e.Emscripten.clang
+
+Starting migrations...
+
+> Network name:    'development'
+> Network id:      5777
+> Block gas limit: 6721975 (0x6691b7)
+
+1_initial_migration.js
+
+Deploying 'Migrations'
+
+> transaction hash:    0x32efe5ccd2bfbaf71d7bb26820d2fa062b4d420a5f9e275cc8049
+> 276d7487832
+> Blocks: 0            Seconds: 0
+> contract address:    0x28A5172eEb320c90448F0132ed475CBF57fC6589
+> block number:        1
+> block timestamp:     1653271302
+> account:             0x7a012E08b544075822af802086b238c9235F12f7
+> balance:             99.99502292
+> gas used:            248854 (0x3cc16)
+> gas price:           20 gwei
+> value sent:          0 ETH
+> total cost:          0.00497708 ETH
+
+> Saving migration to chain.
+>
+> Saving artifacts
+>
+> Total cost:          0.00497708 ETH
+
+2_deploy_contracts.js
+
+Deploying 'System'
+
+> transaction hash:    0x07506a27c67d24086539fc15cec755a59c7c7497f1731f92eef2d
+> ee40da04444
+> Blocks: 0            Seconds: 0
+> contract address:    0x5fa33320695464136975Af227BE5E8Af0e0bdEae
+> block number:        3
+> block timestamp:     1653271304
+> account:             0x7a012E08b544075822af802086b238c9235F12f7
+> balance:             99.98596138
+> gas used:            410564 (0x643c4)
+> gas price:           20 gwei
+> value sent:          0 ETH
+> total cost:          0.00821128 ETH
+
+> Saving migration to chain.
+>
+> Saving artifacts
+>
+> Total cost:          0.00821128 ETH
+
+Summary
+
+> Total deployments:   2
+> Final cost:          0.01318836 ETH
+
+
+
+## 2-5 与已部署的合约进行交互
+
+### 2-5-1 web3.js调用版
+
+```javascript
+// Web3版 参考文档：http://www.codebaoku.com/web3/web3-abi-method.html以及https://ithelp.ithome.com.tw/articles/10205757
+// 参考文档：https://web3js.readthedocs.io/en/v1.7.4/web3-eth.html
+var Web3 = require('web3');
+var web3 = new Web3('http://localhost:8545');
+const Artifact = require("./build/contracts/SimpleCalc.json");
+const accountOne = "0x1311a3037d2cB16c8097690Ca525be94e5ec263D";
+const ABI=Artifact.abi
+const ADDRESS =Artifact.networks["5777"].address
+// 参考文档：https://web3js.readthedocs.io/en/v1.7.4/web3-eth-contract.html#
+const contract = new web3.eth.Contract(ABI, ADDRESS)
+// 属性调用，使用call()https://web3js.readthedocs.io/en/v1.7.4/web3-eth-contract.html#methods-mymethod-call
+// contract.methods.count().call((err,result)=>{
+//     console.log(err)
+//     console.log(result)
+// })
+/*
+// 方法调用
+1、使用send()https://web3js.readthedocs.io/en/v1.7.4/web3-eth-contract.html#methods-mymethod-send
+2、依然使用call，使用call获取return值，使用send获取的是交易信息。参考：https://qa.1r1g.cn/ethereum/ask/4075991/
+ */
+
+contract.methods.add(1,2).call({from:accountOne}).then(data=>{
+    console.log(data)
+})
+/*
+使用send方法的整体说明，从官方文档Copy的，可以看文档
+
+// using the callback
+myContract.methods.myMethod(123).send({from: '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe'}, function(error, transactionHash){
+    ...
+});
+
+// using the promise
+myContract.methods.myMethod(123).send({from: '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe'})
+.then(function(receipt){
+    // receipt can also be a new contract instance, when coming from a "contract.deploy({...}).send()"
+});
+
+
+// using the event emitter
+myContract.methods.myMethod(123).send({from: '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe'})
+.on('transactionHash', function(hash){
+    ...
+})
+.on('confirmation', function(confirmationNumber, receipt){
+    ...
+})
+.on('receipt', function(receipt){
+    // receipt example
+    console.log(receipt);
+    > {
+        "transactionHash": "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b",
+        "transactionIndex": 0,
+        "blockHash": "0xef95f2f1ed3ca60b048b4bf67cde2195961e0bba6f70bcbea9a2c4e133e34b46",
+        "blockNumber": 3,
+        "contractAddress": "0x11f4d0A3c12e86B4b5F39B213F7E19D048276DAe",
+        "cumulativeGasUsed": 314159,
+        "gasUsed": 30234,
+        "events": {
+            "MyEvent": {
+                returnValues: {
+                    myIndexedParam: 20,
+                    myOtherIndexedParam: '0x123456789...',
+                    myNonIndexParam: 'My String'
+                },
+                raw: {
+                    data: '0x7f9fade1c0d57a7af66ab4ead79fade1c0d57a7af66ab4ead7c2c2eb7b11a91385',
+                    topics: ['0xfd43ade1c09fade1c0d57a7af66ab4ead7c2c2eb7b11a91ffdd57a7af66ab4ead7', '0x7f9fade1c0d57a7af66ab4ead79fade1c0d57a7af66ab4ead7c2c2eb7b11a91385']
+                },
+                event: 'MyEvent',
+                signature: '0xfd43ade1c09fade1c0d57a7af66ab4ead7c2c2eb7b11a91ffdd57a7af66ab4ead7',
+                logIndex: 0,
+                transactionIndex: 0,
+                transactionHash: '0x7f9fade1c0d57a7af66ab4ead79fade1c0d57a7af66ab4ead7c2c2eb7b11a91385',
+                blockHash: '0xfd43ade1c09fade1c0d57a7af66ab4ead7c2c2eb7b11a91ffdd57a7af66ab4ead7',
+                blockNumber: 1234,
+                address: '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe'
+            },
+            "MyOtherEvent": {
+                ...
+            },
+            "MyMultipleEvent":[{...}, {...}] // If there are multiple of the same event, they will be in an array
+        }
+    }
+})
+.on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+    ...
+});
+
+ */
+contract.methods.add(1,2).send({from:accountOne}).then((error, transactionHash)=>{
+    console.log(error)
+    console.log(transactionHash)
+})
+
+```
+
+
+
+### 2-5-2 @truffle/contract调用版
+
+
+
+
+
+
+
+# 3、后端的测试
+
+第一种方式实在remix中进行交互测试，这种方法不再赘述。此处介绍通过 **truffle console** 在cmd或者IDE的teminal中进行交互测试的方式。
+
+## 1、 进入基本的交互控制台
+
+```powershell
+truffle console
+```
+
+之后，terminal会变成***truffle(development)>***形式
+
+
+
+
+
+# 4、**前端开发**
